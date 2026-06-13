@@ -1,0 +1,10 @@
+# Ignorar la carpeta viva de la base de datos
+postgres_data/
+
+# Ignorar el archivo SQL generado (porque cada quien lo genera en su PC)
+seed.sql
+
+# Ignorar cachés de Python
+__pycache__/
+
+seed_100.csv:Zone.Identifier
