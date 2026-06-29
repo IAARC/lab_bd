@@ -1,36 +1,16 @@
 CREATE EXTENSION IF NOT EXISTS vector;
 
 CREATE SCHEMA IF NOT EXISTS monitoring;
+CREATE SEQUENCE IF NOT EXISTS monitoring.security_alert_id_seq;
 
-
-CREATE TABLE monitoring.camera (
-    operational_id VARCHAR(55) NOT NULL,
-    device_model VARCHAR(55) NOT NULL,
-    has_night_vision BOOLEAN NOT NULL DEFAULT FALSE,
-    operating_status VARCHAR(55) NOT NULL DEFAULT 'active',
-
-    CONSTRAINT pk_camera PRIMARY KEY (operational_id),
-    CONSTRAINT chk_operating_status CHECK (operating_status IN ('active', 'inactive', 'maintenance', 'fault'))
-);
-
-COMMENT ON TABLE monitoring.camera IS 'Registra los dispositivos físicos de captura de video desplegados en las instalaciones.';
-COMMENT ON COLUMN monitoring.camera.operational_id IS '- Tipo: VARCHAR(55). Código alfa-numérico institucional único de la cámara (Llave Primaria).';
-COMMENT ON COLUMN monitoring.camera.device_model IS '- Tipo: VARCHAR(55). Marca comercial y nombre del modelo del hardware.';
-COMMENT ON COLUMN monitoring.camera.has_night_vision IS '- Tipo: BOOLEAN. Flag booleano que indica si el dispositivo soporta captura infrarroja o en entornos oscuros.';
-COMMENT ON COLUMN monitoring.camera.operating_status IS '- Tipo: VARCHAR(55). Estado operativo actual de la cámara, restringido por una restricción CHECK.';
 
 CREATE TABLE monitoring.location (
     location_id INT NOT NULL,
     building VARCHAR(255) NOT NULL,
     floor VARCHAR(10) NOT NULL, 
     zone_type VARCHAR(255) NOT NULL,
-    operational_id VARCHAR(55) NOT NULL,
 
-    CONSTRAINT pk_location PRIMARY KEY (location_id),
-    CONSTRAINT fk_location_camera 
-        FOREIGN KEY (operational_id) 
-        REFERENCES monitoring.camera(operational_id)
-        ON DELETE CASCADE
+    CONSTRAINT pk_location PRIMARY KEY (location_id)
 );
 
 COMMENT ON TABLE monitoring.location IS 'Especifica la ubicación física y espacial de un dispositivo de captura específico.';
@@ -38,7 +18,31 @@ COMMENT ON COLUMN monitoring.location.location_id IS '- Tipo: INT. Identificador
 COMMENT ON COLUMN monitoring.location.building IS '- Tipo: VARCHAR(255). Nombre, bloque o pabellón de la infraestructura.';
 COMMENT ON COLUMN monitoring.location.floor IS '- Tipo: INT. Nivel numérico dentro de la distribución del edificio.';
 COMMENT ON COLUMN monitoring.location.zone_type IS '- Tipo: VARCHAR(255). Categoría del entorno (Ej: Pasillo, Estacionamiento, Entrada Principal).';
-COMMENT ON COLUMN monitoring.location.operational_id IS '- Tipo: VARCHAR(55). La cámara específica asignada a esta ubicación.';
+
+
+CREATE TABLE monitoring.camera (
+    operational_id VARCHAR(55) NOT NULL,
+    device_model VARCHAR(55) NOT NULL,
+    has_night_vision BOOLEAN NOT NULL DEFAULT FALSE,
+    operating_status VARCHAR(55) NOT NULL DEFAULT 'active',
+    camera_name VARCHAR(100),
+    location_id INT NOT NULL,
+
+    CONSTRAINT pk_camera PRIMARY KEY (operational_id),
+    CONSTRAINT chk_operating_status CHECK (operating_status IN ('active', 'inactive', 'maintenance', 'fault')),
+    CONSTRAINT fk_camera_location
+        FOREIGN KEY (location_id)
+        REFERENCES monitoring.location(location_id)
+        ON DELETE CASCADE
+);
+
+COMMENT ON TABLE monitoring.camera IS 'Registra los dispositivos físicos de captura de video desplegados en las instalaciones.';
+COMMENT ON COLUMN monitoring.camera.operational_id IS '- Tipo: VARCHAR(55). Código alfa-numérico institucional único de la cámara (Llave Primaria).';
+COMMENT ON COLUMN monitoring.camera.device_model IS '- Tipo: VARCHAR(55). Marca comercial y nombre del modelo del hardware.';
+COMMENT ON COLUMN monitoring.camera.has_night_vision IS '- Tipo: BOOLEAN. Flag booleano que indica si el dispositivo soporta captura infrarroja o en entornos oscuros.';
+COMMENT ON COLUMN monitoring.camera.operating_status IS '- Tipo: VARCHAR(55). Estado operativo actual de la cámara, restringido por una restricción CHECK.';
+COMMENT ON COLUMN monitoring.camera.camera_name IS '- Tipo: VARCHAR(100). Nombre descriptivo y legible de la cámara, usado en reportes y consultas analíticas.';
+COMMENT ON COLUMN monitoring.camera.location_id IS '- Tipo: INT. Ubicación física donde está instalada esta cámara (una ubicación puede tener varias cámaras).';
 
 
 CREATE TABLE monitoring.geographic_coordinates (
@@ -198,3 +202,21 @@ CREATE TABLE monitoring.person (
 COMMENT ON TABLE monitoring.person IS 'Subclase especializada que extiende atributos de dominio exclusivos para el seguimiento de peatones.';
 COMMENT ON COLUMN monitoring.person.object_id IS '- Tipo: INT. Identidad foránea que refleja el registro abstracto padre (Llave Primaria / Llave Foránea).';
 COMMENT ON COLUMN monitoring.person.baggage_type IS '- Tipo: VARCHAR(255). Clasificación de accesorios o equipajes observados (Ej: Backpack, Suitcase, None).';
+
+CREATE TABLE monitoring.camera_audit (
+    audit_id SERIAL PRIMARY KEY,
+    operational_id VARCHAR(55) NOT NULL,
+    change_timestamp TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    previous_status VARCHAR(55) NOT NULL,
+    
+    CONSTRAINT fk_camera_audit_camera 
+        FOREIGN KEY (operational_id) 
+        REFERENCES monitoring.camera(operational_id)
+        ON DELETE CASCADE
+);
+
+COMMENT ON TABLE monitoring.camera_audit IS 'Registra las auditorías de desconexión y fallas de las cámaras del sistema.';
+COMMENT ON COLUMN monitoring.camera_audit.audit_id IS '--- Identificador autoincremental de la auditoría.';
+COMMENT ON COLUMN monitoring.camera_audit.operational_id IS '--- ID de la cámara que sufrió el cambio de estado.';
+COMMENT ON COLUMN monitoring.camera_audit.change_timestamp IS '--- Fecha y hora exacta con huso horario en la que ocurrió el cambio.';
+COMMENT ON COLUMN monitoring.camera_audit.previous_status IS '--- Estado operativo que tenía la cámara antes de pasar a inactiva.';
