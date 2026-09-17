@@ -14,10 +14,7 @@ Backend desarrollado con FastAPI y PostgreSQL (con soporte para `pgvector`) para
 
 ### Instalación y configuración
 
-1. **Clonar el repositorio o ubicarse en la carpeta del proyecto:**
-   ```bash
-   cd videovigilancia-api
-   ```
+1. **Clonar el repositorio y ubicarse en la carpeta del proyecto:**
 
 2. **Crear y activar un entorno virtual:**
    * En Windows (PowerShell):
@@ -37,7 +34,7 @@ Backend desarrollado con FastAPI y PostgreSQL (con soporte para `pgvector`) para
    ```
 
 4. **Configurar variables de entorno:**
-   Crear un archivo `.env` en la raíz del proyecto (o editar el existente) con las credenciales de la base de datos:
+   Crear un archivo `.env` en la raíz del proyecto con las credenciales de la base de datos correspondientes, ejemplo:
    ```env
    DB_HOST=localhost
    DB_PORT=5432
