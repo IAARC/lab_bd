@@ -61,7 +61,7 @@ BEGIN
     LEFT JOIN 
         monitoring.security_alert sa ON de.event_id = sa.event_id
     WHERE 
-        l.zone_type = p_tipo_zona
+        LOWER(l.zone_type) = LOWER(p_tipo_zona)
     GROUP BY 
         l.location_id
     ORDER BY 
@@ -106,7 +106,7 @@ BEGIN
         oe.object_id AS objeto_encontrado_id,
         dobj.general_category AS tipo,
         (oe.visual_embedding <=> v_ref_embedding)::FLOAT AS distancia_coseno,
-        c.camera_name AS camara_origen,
+        c.operational_id AS camara_origen,
         de.timestamp_triggered AS fecha_evento
     FROM 
         monitoring.object_embedding oe

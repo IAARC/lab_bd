@@ -111,6 +111,30 @@ lab_bd/
 * **PostgreSQL 15+** con la extensión `pgvector` habilitada.
 * Las tablas y funciones del Corte 3 (`schema.sql`, `functions.sql`, `triggers.sql`) deben estar cargadas en la base de datos.
 
+### Pasos para Configurar la Base de Datos (Corte 3)
+
+1. **Crear la base de datos y habilitar `pgvector`:**
+   Abre `psql` o tu cliente de base de datos preferido (DBeaver, pgAdmin) y ejecuta:
+   ```sql
+   CREATE DATABASE videovigilancia_db;
+   \c videovigilancia_db
+   CREATE EXTENSION IF NOT EXISTS vector;
+   ```
+
+2. **Ejecutar los scripts SQL:**
+   Carga los esquemas, funciones y triggers en el siguiente orden desde la carpeta `Corte3`:
+   ```bash
+   psql -U postgres -d videovigilancia_db -f Corte3/schema.sql
+   psql -U postgres -d videovigilancia_db -f Corte3/functions.sql
+   psql -U postgres -d videovigilancia_db -f Corte3/triggers.sql
+   ```
+
+3. **(Opcional) Poblar la base de datos con datos de prueba:**
+   Si deseas utilizar los datos iniciales, ejecuta el script de Python `generate_seed.py` (requiere tener instalado `pandas` y `psycopg` o ejecutarlo en el mismo entorno de Corte 4).
+   ```bash
+   python Corte3/generate_seed.py
+   ```
+
 ### Pasos para Levantar la API (Corte 4)
 
 1. **Ubicarse en el directorio del backend:**

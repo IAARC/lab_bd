@@ -24,31 +24,41 @@ async def upload_csv_data(file: UploadFile = File(...), db: Connection = Depends
             try:
                 # Subtransacción por fila (savepoint) para que un error no aborte todo el lote
                 with db.transaction():
+                    # Upsert detection_event
                     cur.execute(
                         """
-                        INSERT INTO eventos (id, id_camara, tipo_objeto, confianza, fecha_hora)
-                        VALUES (%s, %s, %s, %s, %s)
-                        ON CONFLICT (id) DO UPDATE 
-                        SET id_camara = EXCLUDED.id_camara,
-                            tipo_objeto = EXCLUDED.tipo_objeto,
-                            confianza = EXCLUDED.confianza,
-                            fecha_hora = EXCLUDED.fecha_hora
+                        INSERT INTO monitoring.detection_event (event_id, operational_id, timestamp_triggered, confidence_level)
+                        VALUES (%s, %s, %s, %s)
+                        ON CONFLICT (event_id) DO UPDATE 
+                        SET operational_id = EXCLUDED.operational_id,
+                            timestamp_triggered = EXCLUDED.timestamp_triggered,
+                            confidence_level = EXCLUDED.confidence_level
                         RETURNING (xmax = 0) AS inserted;
                         """,
                         (
-                            int(row["id"]),
-                            int(row["id_camara"]),
-                            row["tipo_objeto"].strip(),
-                            float(row["confianza"]),
-                            row["fecha_hora"].strip()
+                            int(row["event_id"]),
+                            row["operational_id"],
+                            row["timestamp"] if "timestamp" in row and row["timestamp"] else None,
+                            float(row["confidence_score"])
                         )
                     )
-                    res = cur.fetchone()
-                    if res and res["inserted"]:
+                    res_event = cur.fetchone()
+                    
+                    # Upsert detected_object
+                    cur.execute(
+                        """
+                        INSERT INTO monitoring.detected_object (object_id, event_id, general_category, dominant_color)
+                        VALUES ((SELECT COALESCE(MAX(object_id), 0) + 1 FROM monitoring.detected_object), %s, %s, 'unknown')
+                        """,
+                        (int(row["event_id"]), 'PERSON')
+                    )
+
+                    if res_event and res_event["inserted"]:
                         agregadas += 1
                     else:
                         actualizadas += 1
-            except Exception:
+            except Exception as e:
+                print("Error on row:", row, e)
                 errores += 1
 
         db.commit()

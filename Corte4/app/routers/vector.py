@@ -14,37 +14,44 @@ def get_similar_objects(
     db: Connection = Depends(get_db)
 ):
     with db.cursor() as cur:
-        # Invocación directa de la función PL/pgSQL de Fase 3
-        cur.execute("SELECT * FROM find_similar_objects(%s, %s, %s);", (id, threshold, limit))
+        cur.execute("SELECT objeto_encontrado_id, tipo, distancia_coseno, camara_origen, fecha_evento FROM monitoring.find_similar_objects(%s, %s, %s);", (id, threshold, limit))
         results = cur.fetchall()
-        return results
+        
+        out = []
+        for r in results:
+            out.append({
+                "object_id": r["objeto_encontrado_id"],
+                "general_category": r["tipo"],
+                "distance": r["distancia_coseno"],
+                "operational_id": r["camara_origen"],
+                "timestamp": r["fecha_evento"]
+            })
+        return out
 
 @router.post("/search/similar", response_model=list[SimilarObjectOut])
 def search_similar_by_embedding(
     payload: SearchSimilarBody,
-    tipo: str = Query(None, pattern="^(persona|vehiculo|vehículo)$"),
+    tipo: str = Query(None, pattern="^(PERSON|VEHICLE)$"),
     limit: int = Query(10, ge=1, le=50),
     db: Connection = Depends(get_db)
 ):
-    # Formateo del array a la sintaxis esperada por pgvector: '[0.12, 0.34, ...]'
     embedding_str = "[" + ",".join(map(str, payload.embedding)) + "]"
     
-    # Normalizar por si se consulta con o sin tilde
-    tipo_filtro = tipo.lower() if tipo else None
-    if tipo_filtro == "vehículo":
-        tipo_filtro = "vehiculo"
+    tipo_filtro = tipo.upper() if tipo else None
 
     query = """
         SELECT 
-            e.id,
-            e.tipo_objeto,
-            e.id_camara,
-            e.fecha_hora,
-            (e.embedding <=> %s::vector) AS distancia
-        FROM eventos e
-        WHERE (%s IS NULL OR e.tipo_objeto = %s)
-          AND e.embedding IS NOT NULL
-        ORDER BY distancia ASC
+            oe.object_id,
+            dobj.general_category,
+            c.operational_id,
+            de.timestamp_triggered AS timestamp,
+            (oe.visual_embedding <=> %s::vector) AS distance
+        FROM monitoring.object_embedding oe
+        JOIN monitoring.detected_object dobj ON oe.object_id = dobj.object_id
+        JOIN monitoring.detection_event de ON dobj.event_id = de.event_id
+        JOIN monitoring.camera c ON de.operational_id = c.operational_id
+        WHERE (%s::VARCHAR IS NULL OR dobj.general_category = %s)
+        ORDER BY distance ASC
         LIMIT %s;
     """
     with db.cursor() as cur:
