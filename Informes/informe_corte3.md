@@ -1,7 +1,4 @@
 # Informe Corte 3 — VISIÓN-DB
-
-**CI-3391 - Taller de Bases de Datos I**
-
 ## 1. Funciones Analíticas (Entregable 3A)
 
 ### `get_camera_traffic(camara_id, fecha_inicio, fecha_fin)`

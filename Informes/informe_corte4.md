@@ -1,6 +1,3 @@
-# Universidad Simón Bolívar
-### Departamento de Computación y Tecnología de la Información
-### CI-3391: Taller de Bases de Datos I — Corte 4
 **Informe Técnico: API RESTful para Gestión y Analítica de Videovigilancia Inteligente**
 
 ---

@@ -1,7 +1,5 @@
 # INFORME DE DISEÑO Y CONSULTAS ANALÍTICAS DE BASE DE DATOS
 ## Laboratorio de Monitoreo de Seguridad por Visión Artificial 
-**Grupo de Trabajo:** John Garrido 20-10293 / Andrés Ramírez 21-10520
-
 ---
 
 ## 1. Introducción y Contexto del Problema

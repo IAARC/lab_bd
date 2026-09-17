@@ -1,4 +1,3 @@
-# CI-3391 Taller de Bases de Datos I — Corte 4
 ## API RESTful de Videovigilancia Inteligente
 
 Backend desarrollado con FastAPI y PostgreSQL (con soporte para `pgvector`) para la gestión de cámaras, ubicaciones, eventos y analíticas de videovigilancia.
